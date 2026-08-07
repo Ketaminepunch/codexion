@@ -12,14 +12,14 @@
 
 #include "../includes/codexion.h"
 
-int	set_number(char *str, long *dest, int idx)
+int	set_number(char *str, uint64_t *dest, int idx)
 {
 	if (is_valid_number(str) == 0)
 	{
 		fprintf(stderr, "Error: argument %i not a positive number\n", idx);
 		return (1);
 	}
-	*dest = atoi(str);
+	*dest = strtoull(str, NULL, 10);
 	return (0);
 }
 

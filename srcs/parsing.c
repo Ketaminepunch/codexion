@@ -14,7 +14,7 @@
 
 int	is_valid_number(char *str)
 {
-	int	i;
+	uint64_t	i;
 
 	i = 0;
 	if (!str || strlen(str) == 0)

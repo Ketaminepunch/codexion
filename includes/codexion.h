@@ -14,6 +14,7 @@
 # define CODEXION_H
 
 # include <pthread.h>
+# include <stdint.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
@@ -28,18 +29,18 @@ typedef enum e_scheduler
 
 typedef struct s_args
 {
-	long		num_coders;
-	long		time_to_burnout;
-	long		time_to_compile;
-	long		time_to_debug;
-	long		time_to_refactor;
-	long		compiles_required;
-	long		dongle_cooldown;
+	uint64_t	num_coders;
+	uint64_t	time_to_burnout;
+	uint64_t	time_to_compile;
+	uint64_t	time_to_debug;
+	uint64_t	time_to_refactor;
+	uint64_t	compiles_required;
+	uint64_t	dongle_cooldown;
 	t_scheduler	scheduler;
 }			t_args;
 
 int			is_valid_number(char *str);
-int			set_number(char *str, long *dest, int idx);
+int			set_number(char *str, uint64_t *dest, int idx);
 
 int			parse_scheduler(char *str, t_scheduler *dest);
 
