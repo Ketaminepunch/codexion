@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:37:40 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 22:52:47 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/11 00:09:16 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,9 +61,7 @@ int	main(int ac, char **av)
 		thread_args = malloc(sizeof(t_thread_arg) * args.num_coders);
 		if (!thread_args)
 			return (1);
-		if (spawn_coders(&sim, thread_args))
-			return (1);
-		if (join_coders(&sim))
+		if (create_and_join(&sim, thread_args))
 			return (1);
 	}
 	else

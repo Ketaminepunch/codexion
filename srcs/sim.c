@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/10 22:30:00 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 22:30:00 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/11 00:16:58 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 int	array_slot_init(t_simulation_state *sim, uint64_t i)
 {
-	sim->coder_arr[i].id = i;
+	sim->coder_arr[i].id = i + 1;
 	sim->coder_arr[i].right = i;
 	sim->coder_arr[i].left = (i - 1 + sim->args.num_coders)
 		% sim->args.num_coders;
@@ -52,5 +52,18 @@ int	sim_init(t_simulation_state *sim, t_args args)
 			return (1);
 		i++;
 	}
+	return (0);
+}
+
+int	create_and_join(t_simulation_state *sim, t_thread_arg *thread_args)
+{
+	if (spawn_coders(sim, thread_args))
+		return (1);
+	if (pthread_create(&sim->monitor, NULL, monitor_thread, sim))
+		return (1);
+	if (pthread_join(sim->monitor, NULL))
+		return (1);
+	if (join_coders(sim))
+		return (1);
 	return (0);
 }

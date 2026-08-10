@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:33:52 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 22:54:34 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/11 00:08:42 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,7 @@ typedef struct s_simulation_state
 	uint64_t			start_time;
 	int					stop_flag;
 	pthread_mutex_t		stop_lock;
+	pthread_t			monitor;
 }						t_simulation_state;
 
 typedef struct s_thread_arg
@@ -106,11 +107,11 @@ typedef struct s_thread_arg
 	t_simulation_state	*sim;
 }						t_thread_arg;
 
+void					dongle_release(t_dongle *dongle, t_args args);
+uint64_t				get_time_ms(void);
 int						is_valid_number(char *str);
 int						parse_args(char **av, t_args *args);
 int						parse_scheduler(char *str, t_scheduler *dest);
-uint64_t				get_time_ms(void);
-void					dongle_release(t_dongle *dongle, t_args args);
 void					dongle_acquire(t_dongle *dongle, t_coder *coder,
 							t_args *args);
 int						compare_requests(t_request *request1,
@@ -135,6 +136,19 @@ int						sim_init(t_simulation_state *sim, t_args args);
 int						spawn_coders(t_simulation_state *sim,
 							t_thread_arg *thread_args);
 int						join_coders(t_simulation_state *sim);
+
+int						check_burnout(t_simulation_state *sim,
+							uint64_t *burnt_id);
+
+int						check_success(t_simulation_state *sim);
+
+void					broadcast_stop(t_simulation_state *sim);
+
+void					*monitor_thread(void *arg);
+
+int						create_and_join(t_simulation_state *sim,
+							t_thread_arg *thread_args);
+
 int						array_slot_init(t_simulation_state *sim, uint64_t i);
 
 #endif
