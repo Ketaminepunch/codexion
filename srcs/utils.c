@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/10 20:57:08 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 21:55:23 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 23:30:29 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,12 @@ int	coder_should_stop(t_simulation_state *sim, t_coder *coder)
 
 void	coder_take_dongles(t_coder *coder, t_simulation_state *sim)
 {
-	if (coder->left < coder->right)
+	if (coder->left == coder->right)
+	{
+		dongle_acquire(&sim->dongle_arr[coder->left], coder, &sim->args);
+		log_action(sim, coder->id, "has taken a dongle");
+	}
+	else if (coder->left < coder->right)
 	{
 		dongle_acquire(&sim->dongle_arr[coder->left], coder, &sim->args);
 		log_action(sim, coder->id, "has taken a dongle");
@@ -54,8 +59,13 @@ void	coder_take_dongles(t_coder *coder, t_simulation_state *sim)
 
 void	coder_release_dongle(t_coder *coder, t_simulation_state *sim)
 {
-	dongle_release(&sim->dongle_arr[coder->left], sim->args);
-	dongle_release(&sim->dongle_arr[coder->right], sim->args);
+	if (coder->left == coder->right)
+		dongle_release(&sim->dongle_arr[coder->left], sim->args);
+	else
+	{
+		dongle_release(&sim->dongle_arr[coder->left], sim->args);
+		dongle_release(&sim->dongle_arr[coder->right], sim->args);
+	}
 }
 
 void	*coder_thread(void *arg)
