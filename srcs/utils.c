@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/10 20:57:08 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 21:53:55 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 21:55:23 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ int	coder_should_stop(t_simulation_state *sim, t_coder *coder)
 	pthread_mutex_lock(&sim->stop_lock);
 	local = sim->stop_flag;
 	pthread_mutex_unlock(&sim->stop_lock);
-	if (local || coder->compiles_finished < sim->args.compiles_required)
+	if (local || coder->compiles_finished >= sim->args.compiles_required)
 		return (1);
 	return (0);
 }
