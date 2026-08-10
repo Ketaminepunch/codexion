@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:33:52 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 17:03:48 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 19:36:53 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,12 @@ typedef struct s_request
 	uint64_t		arrival_time;
 	uint64_t		deadline;
 }					t_request;
+
+typedef struct s_heap
+{
+	t_request		*items;
+	uint64_t		count;
+}					t_heap;
 
 typedef enum e_dongle_state
 {
@@ -49,7 +55,7 @@ typedef struct s_dongle
 	t_dongle_state	state;
 	uint64_t		ready_at_ms;
 	pthread_cond_t	condition;
-	// TODO: track who is waiting
+	t_heap			heap;
 }					t_dongle;
 
 typedef struct s_coder
@@ -97,6 +103,24 @@ typedef struct s_simulation_state
 int					is_valid_number(char *str);
 int					parse_args(char **av, t_args *args);
 int					parse_scheduler(char *str, t_scheduler *dest);
+
+uint64_t			get_time_ms(void);
+
+void				dongle_release(t_dongle *dongle, t_args args);
+
+void				dongle_acquire(t_dongle *dongle);
+
+int					compare_requests(t_request *request1, t_request *request2,
+						t_args *args);
+
+void				heap_swap(t_heap *heap, uint64_t i, uint64_t j);
+
+void				heap_push(t_heap *heap, t_request *request, t_args *args);
+
+t_request			heap_pop(t_heap *heap, t_args *args);
+
+uint64_t			most_urgent_child(t_heap *heap, uint64_t i, t_args *args);
+
 int					set_number(char *str, uint64_t *dest, int idx);
 
 #endif

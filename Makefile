@@ -7,23 +7,26 @@ CC			= cc
 CFLAGS		= -Wall -Wextra -Werror -pthread
 INCLUDES	= -Iincludes
 
-SRCS_DIR	= srcs
-OBJS_DIR	= objs
+SRC_DIR		= srcs
+OBJ_DIR		= objs
 
-SRCS		= $(wildcard $(SRCS_DIR)/*.c)
-OBJS		= $(SRCS:$(SRCS_DIR)/%.c=$(OBJS_DIR)/%.o)
+SRCS		= $(SRC_DIR)/dongle.c \
+			  $(SRC_DIR)/heap.c \
+			  $(SRC_DIR)/main.c \
+			  $(SRC_DIR)/parsing.c
+OBJS		= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(NAME) $(LIBS)
 
-$(OBJS_DIR)/%.o: $(SRCS_DIR)/%.c
-	@mkdir -p $(OBJS_DIR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
-	rm -rf $(OBJS_DIR)
+	rm -rf $(OBJ_DIR)
 
 fclean: clean
 	rm -f $(NAME)

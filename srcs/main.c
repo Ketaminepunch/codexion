@@ -50,8 +50,7 @@ int	main(int ac, char **av)
 
 	if (ac != 9)
 	{
-		fprintf(stderr, "Error: argument count not 9\n");
-		return (1);
+		return (fprintf(stderr, "Error: argument count not 9\n"), 1);
 	}
 	if (parse_args(av, &args) == 1)
 		return (1);
