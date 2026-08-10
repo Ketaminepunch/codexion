@@ -14,6 +14,7 @@ SRCS		= $(SRC_DIR)/dongle.c \
 			  $(SRC_DIR)/heap.c \
 			  $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/parsing.c \
+			  $(SRC_DIR)/sim.c \
 			  $(SRC_DIR)/utils.c
 OBJS		= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 

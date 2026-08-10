@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:37:40 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 20:51:06 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 22:52:47 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,13 +46,58 @@ int	parse_args(char **av, t_args *args)
 
 int	main(int ac, char **av)
 {
-	t_args	args;
+	t_args				args;
+	t_simulation_state	sim;
+	t_thread_arg		*thread_args;
 
 	if (ac != 9)
 	{
 		return (fprintf(stderr, "Error: Not 9 arguments\n"), 1);
 	}
-	if (parse_args(av, &args) == 1)
+	if (parse_args(av, &args) == 0)
+	{
+		if (sim_init(&sim, args))
+			return (1);
+		thread_args = malloc(sizeof(t_thread_arg) * args.num_coders);
+		if (!thread_args)
+			return (1);
+		if (spawn_coders(&sim, thread_args))
+			return (1);
+		if (join_coders(&sim))
+			return (1);
+	}
+	else
 		return (1);
+	return (0);
+}
+
+int	spawn_coders(t_simulation_state *sim, t_thread_arg *thread_args)
+{
+	uint64_t	i;
+
+	i = 0;
+	while (i < sim->args.num_coders)
+	{
+		thread_args[i].coder = &sim->coder_arr[i];
+		thread_args[i].sim = sim;
+		if (pthread_create(&sim->coder_arr[i].ticket, NULL, coder_thread,
+				&thread_args[i]))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int	join_coders(t_simulation_state *sim)
+{
+	uint64_t	i;
+
+	i = 0;
+	while (i < sim->args.num_coders)
+	{
+		if (pthread_join(sim->coder_arr[i].ticket, NULL))
+			return (1);
+		i++;
+	}
 	return (0);
 }

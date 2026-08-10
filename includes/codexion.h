@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:33:52 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 21:52:26 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 22:54:34 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,41 +109,32 @@ typedef struct s_thread_arg
 int						is_valid_number(char *str);
 int						parse_args(char **av, t_args *args);
 int						parse_scheduler(char *str, t_scheduler *dest);
-
 uint64_t				get_time_ms(void);
-
 void					dongle_release(t_dongle *dongle, t_args args);
-
 void					dongle_acquire(t_dongle *dongle, t_coder *coder,
 							t_args *args);
-
 int						compare_requests(t_request *request1,
 							t_request *request2, t_args *args);
-
 void					heap_swap(t_heap *heap, uint64_t i, uint64_t j);
-
 void					heap_push(t_heap *heap, t_request *request,
 							t_args *args);
-
 t_request				heap_pop(t_heap *heap, t_args *args);
-
 uint64_t				most_urgent_child(t_heap *heap, uint64_t i,
 							t_args *args);
-
 void					log_action(t_simulation_state *sim, uint64_t id,
 							char *msg);
-
 void					*coder_thread(void *arg);
-
 void					coder_release_dongle(t_coder *coder,
 							t_simulation_state *sim);
-
 void					coder_take_dongles(t_coder *coder,
 							t_simulation_state *sim);
-
 int						coder_should_stop(t_simulation_state *sim,
 							t_coder *coder);
-
 int						set_number(char *str, uint64_t *dest, int idx);
+int						sim_init(t_simulation_state *sim, t_args args);
+int						spawn_coders(t_simulation_state *sim,
+							t_thread_arg *thread_args);
+int						join_coders(t_simulation_state *sim);
+int						array_slot_init(t_simulation_state *sim, uint64_t i);
 
 #endif
