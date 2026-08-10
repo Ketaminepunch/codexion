@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:37:40 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/06 19:39:26 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/10 20:51:06 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ int	main(int ac, char **av)
 
 	if (ac != 9)
 	{
-		return (fprintf(stderr, "Error: argument count not 9\n"), 1);
+		return (fprintf(stderr, "Error: Not 9 arguments\n"), 1);
 	}
 	if (parse_args(av, &args) == 1)
 		return (1);
