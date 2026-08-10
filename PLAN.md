@@ -37,22 +37,30 @@ that matters for the eval, but it's untracked either way unless you `git add` it
   `coder_take_dongles`, `coder_release_dongle`, `coder_thread` (the full
   acquire -> compile -> release -> debug -> refactor loop, updating
   `last_compile_start`/`compiles_finished` under `coder->lock`).
+- Wired coder threads up in `main` (`srcs/main.c`, `srcs/sim.c`):
+  - `sim_init`/`array_slot_init` (`srcs/sim.c`) — allocate `dongle_arr`/
+    `coder_arr`, init `out_lock`/`stop_lock`/`start_time`/`stop_flag`, and
+    per-slot init each dongle (state/lock/condition/heap, heap capacity 2 —
+    max simultaneous waiters per dongle in the circular topology) and each
+    coder (id, left/right via `(i - 1 + n) % n`, lock, `last_compile_start`
+    seeded to `get_time_ms()` so the future monitor thread doesn't see a
+    false burnout at t=0).
+  - `spawn_coders`/`join_coders` (`srcs/main.c`) — `malloc`'d `t_thread_arg`
+    array sized to `num_coders`, `pthread_create` per coder storing the id
+    into `coder->ticket`, then `pthread_join` all of them.
+  - Builds clean (`make re`); not yet smoke-tested end-to-end (no monitor
+    thread yet, and the `n == 1` double-acquire edge case in
+    `coder_take_dongles` — see below — isn't handled).
 
 ## Remaining work
 
-### 6b. Wire coder threads up in `main`
-`coder_thread` itself is done, but nothing calls it yet — `main.c` still only
-parses args. Still needed:
-- Allocate/init `t_simulation_state`: `dongle_arr`, `coder_arr`, `out_lock`,
-  `stop_lock`, `start_time`, `stop_flag`.
-- Per dongle: `pthread_mutex_init`, `pthread_cond_init`, initial `FREE` state,
-  empty heap.
-- Per coder: id, `left`/`right` dongle indices, `pthread_mutex_init`, initial
-  state, zeroed counters.
-- Build each `t_thread_arg`, `pthread_create` one thread per coder.
-- `pthread_join` all coder threads once the sim ends.
-- Cleanup: `pthread_mutex_destroy`/`pthread_cond_destroy` everything, free
-  arrays.
+### Known issue: n == 1 self-deadlock
+When `num_coders == 1`, `left == right == 0` (same dongle both sides).
+`coder_take_dongles` as written will call `dongle_acquire` on that same
+dongle twice in a row — the second call pushes the coder into the heap again
+and waits for `state != HELD`, but the coder itself is the one holding it.
+Permanent self-deadlock. Needs a `left == right` special case (skip the
+second acquire/release) before the 1-coder test in step 9 will work.
 
 ### 7. Monitor thread
 - Separate thread (not one of the coder threads).
