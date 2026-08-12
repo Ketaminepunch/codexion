@@ -10,7 +10,8 @@ INCLUDES	= -Iincludes
 SRC_DIR		= srcs
 OBJ_DIR		= objs
 
-SRCS		= $(SRC_DIR)/dongle.c \
+SRCS		= $(SRC_DIR)/coders.c \
+			  $(SRC_DIR)/dongle.c \
 			  $(SRC_DIR)/heap.c \
 			  $(SRC_DIR)/main.c \
 			  $(SRC_DIR)/monitoring.c \

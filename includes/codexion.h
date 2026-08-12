@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:33:52 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/11 00:08:42 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/12 19:09:42 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,8 +112,6 @@ uint64_t				get_time_ms(void);
 int						is_valid_number(char *str);
 int						parse_args(char **av, t_args *args);
 int						parse_scheduler(char *str, t_scheduler *dest);
-void					dongle_acquire(t_dongle *dongle, t_coder *coder,
-							t_args *args);
 int						compare_requests(t_request *request1,
 							t_request *request2, t_args *args);
 void					heap_swap(t_heap *heap, uint64_t i, uint64_t j);
@@ -126,8 +124,6 @@ void					log_action(t_simulation_state *sim, uint64_t id,
 							char *msg);
 void					*coder_thread(void *arg);
 void					coder_release_dongle(t_coder *coder,
-							t_simulation_state *sim);
-void					coder_take_dongles(t_coder *coder,
 							t_simulation_state *sim);
 int						coder_should_stop(t_simulation_state *sim,
 							t_coder *coder);
@@ -148,6 +144,18 @@ void					*monitor_thread(void *arg);
 
 int						create_and_join(t_simulation_state *sim,
 							t_thread_arg *thread_args);
+
+int						dongle_acquire(t_dongle *dongle, t_coder *coder,
+							t_args *args, t_simulation_state *sim);
+
+int						coder_take_dongles(t_coder *coder,
+							t_simulation_state *sim);
+
+int						acquire_pair(t_coder *coder, t_simulation_state *sim,
+							uint64_t first, uint64_t second);
+
+void					coder_work_cycle(t_coder *coder,
+							t_simulation_state *sim);
 
 int						array_slot_init(t_simulation_state *sim, uint64_t i);
 

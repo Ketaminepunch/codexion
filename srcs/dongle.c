@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/10 17:07:04 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/10 20:31:55 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/12 18:39:34 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,19 +43,39 @@ void	dongle_wait_turn(t_dongle *dongle)
 		pthread_cond_wait(&dongle->condition, &dongle->lock);
 }
 
-void	dongle_acquire(t_dongle *dongle, t_coder *coder, t_args *args)
+int	stop_requested(t_simulation_state *sim)
+{
+	int	local;
+
+	pthread_mutex_lock(&sim->stop_lock);
+	local = sim->stop_flag;
+	pthread_mutex_unlock(&sim->stop_lock);
+	return (local);
+}
+
+int	dongle_acquire(t_dongle *dongle, t_coder *coder, t_args *args,
+		t_simulation_state *sim)
 {
 	t_request	request;
+	int			result;
 
 	request.id = coder->id;
 	request.arrival_time = get_time_ms();
 	request.deadline = coder->last_compile_start + args->time_to_burnout;
 	pthread_mutex_lock(&dongle->lock);
 	heap_push(&dongle->heap, &request, args);
-	while (dongle->state == HELD || get_time_ms() < dongle->ready_at_ms
-		|| dongle->heap.items[0].id != coder->id)
+	while ((!stop_requested(sim)) && (dongle->state == HELD
+			|| get_time_ms() < dongle->ready_at_ms
+			|| dongle->heap.items[0].id != coder->id))
 		dongle_wait_turn(dongle);
-	heap_pop(&dongle->heap, args);
-	dongle->state = HELD;
+	result = (dongle->state != HELD && get_time_ms() >= dongle->ready_at_ms
+			&& dongle->heap.items[0].id == coder->id);
+	if (dongle->heap.items[0].id == coder->id)
+		heap_pop(&dongle->heap, args);
+	else
+		dongle->heap.count--;
+	if (result)
+		dongle->state = HELD;
 	pthread_mutex_unlock(&dongle->lock);
+	return (result);
 }

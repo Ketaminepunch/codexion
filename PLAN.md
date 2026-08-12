@@ -48,49 +48,86 @@ that matters for the eval, but it's untracked either way unless you `git add` it
   - `spawn_coders`/`join_coders` (`srcs/main.c`) — `malloc`'d `t_thread_arg`
     array sized to `num_coders`, `pthread_create` per coder storing the id
     into `coder->ticket`, then `pthread_join` all of them.
-  - Builds clean (`make re`); not yet smoke-tested end-to-end (no monitor
-    thread yet, and the `n == 1` double-acquire edge case in
-    `coder_take_dongles` — see below — isn't handled).
+  - Builds clean (`make re`).
+- n == 1 self-deadlock fixed: `coder_take_dongles` (`srcs/utils.c`) is now a
+  proper `if (left == right) {...} else if (left < right) {...} else {...}`
+  chain (was two independent `if`s, so the `left == right` case fell through
+  into the `else` and double-acquired the same dongle anyway). Verified: `./
+  codexion 1 ... ` runs 3 compile cycles clean, no hang.
+- Coder ids are 1-indexed (`sim->coder_arr[i].id = i + 1` in
+  `array_slot_init`, `srcs/sim.c`), matching the subject ("number ranging
+  from 1 to number_of_coders") and the example log format. `id` is only ever
+  compared for equality or printed (`srcs/dongle.c`, `srcs/monitoring.c`,
+  `srcs/utils.c`), never used as an array index, so the +1 was a
+  single-line, safe change.
+- Monitor thread (`srcs/monitoring.c`): `check_burnout`, `check_success`,
+  `broadcast_stop`, `monitor_thread`. Wired into `main` via
+  `create_and_join` (`srcs/sim.c`): spawns coders, spawns the monitor, joins
+  the monitor first (it only returns once `stop_flag` is set and every
+  dongle's condvar has been broadcast), then joins the coders. Verified:
+  burnout logged within ~1ms of the threshold (e.g. `101 1 burned out` for
+  `time_to_burnout=100`), program exits instead of hanging.
+- `log_action` serialized via `out_lock`, format matches the subject exactly.
 
 ## Remaining work
 
-### Known issue: n == 1 self-deadlock
-When `num_coders == 1`, `left == right == 0` (same dongle both sides).
-`coder_take_dongles` as written will call `dongle_acquire` on that same
-dongle twice in a row — the second call pushes the coder into the heap again
-and waits for `state != HELD`, but the coder itself is the one holding it.
-Permanent self-deadlock. Needs a `left == right` special case (skip the
-second acquire/release) before the 1-coder test in step 9 will work.
+### Known issue: stop signal not checked while waiting for a dongle
+Found 2026-08-11 while comparing timing against classmates' implementations
+on `./codexion 5 800 50 20 20 8 400 edf`: theirs finishes in ~800ms / 21 log
+lines (burns out right at the deadline and stops), mine takes ~2300-2800ms /
+36-41 lines. Confirmed via log inspection: a coder that already burned out
+(`801 1 burned out`) goes on to acquire dongles and run a whole extra
+compile cycle (`2250 1 has taken a dongle` ...) over a second later.
 
-### 7. Monitor thread
-- Separate thread (not one of the coder threads).
-- Polls/detects when `now - last_compile_start > time_to_burnout` for any
-  coder.
-- Must log the burnout within 10ms of the real event, then signal all coder
-  threads to stop and `pthread_join` them.
-- Also responsible for detecting the "everyone hit compiles_required" success
-  stop condition.
-- Needs to `pthread_cond_broadcast` every dongle's condition variable when it
-  sets the stop flag, so coder threads blocked in `dongle_wait_turn` actually
-  wake up and notice the stop rather than hanging.
+Root cause: `coder_should_stop` (`srcs/utils.c`) is only checked at the top
+of `coder_thread`'s while loop. `dongle_acquire`'s wait loop
+(`srcs/dongle.c:55-57`) has no idea the simulation ended — it just keeps
+blocking in `dongle_wait_turn` until it legitimately wins the dongle, no
+matter how long that takes after `stop_flag` was set.
 
-### 8. Serialized logging
-- `log_action` (in `srcs/utils.c`) is already written and mutex-protected —
-  just needs `out_lock` to actually get `pthread_mutex_init`'d during setup
-  (see 6b).
-- Exact format: `timestamp_in_ms X has taken a dongle / is compiling / is
-  debugging / is refactoring / burned out`.
-- Timestamp = ms since simulation start (`gettimeofday` is fine per the
-  subject, `clock_gettime` also allowed).
+Fix plan (not yet implemented):
+- `dongle_acquire(t_dongle *dongle, t_coder *coder, t_args *args)` needs
+  `sim` added to its signature so it can read `stop_flag`, and its return
+  type needs to change from `void` to `int` (1 = acquired, 0 = aborted due
+  to stop).
+- Wait loop becomes `while (!stop_requested(sim) && (state == HELD || ...))`
+  — ANDing in the stop check so it exits the moment stop fires, not just
+  when eligible.
+- After the loop, re-check eligibility directly (don't just branch on
+  `stop_requested`) — the loop can exit either because it's eligible or
+  because stop fired, and only re-checking the original three-part
+  condition tells those apart.
+- On abort: the coder already pushed its own request into the heap before
+  the loop (line 54) — can't just `heap_pop` (that removes index 0, which
+  might be the *other* coder's request). Since heap capacity is always <= 2
+  (ring topology guarantees at most 2 waiters per dongle), if we're not at
+  index 0 we must be at index 1, so removal is simple — but needs to handle
+  both cases (we're at 0 alone/top, or we're at 1).
+- `coder_take_dongles` (`srcs/utils.c`) becomes `int`-returning too: if the
+  first `dongle_acquire` aborts, return 0 (nothing held, nothing to clean
+  up). If the first succeeds but the second aborts, must `dongle_release`
+  the first before returning 0 (otherwise it stays HELD forever).
+- `coder_thread`'s loop (`srcs/utils.c:82`) needs
+  `if (!coder_take_dongles(coder, sim)) break;` instead of an unchecked call,
+  so an aborted acquisition exits the thread immediately instead of
+  continuing into `"is compiling"`.
+- Once fixed, re-run the FIFO-vs-EDF starvation comparison — the stats
+  gathered before this fix are unreliable (a stuck/slow-stopping coder can
+  keep the whole program running long past when the scheduler decision
+  actually mattered).
 
-### 9. Testing
-- 1-coder edge case (only one dongle should exist on the table at all).
-- fifo vs edf under contention (many coders, tight `time_to_burnout`).
-- Confirm edf actually prevents starvation where fifo might not.
-- valgrind for leaks, helgrind/tsan for data races if available.
-- Confirm burnout log timing stays within the 10ms tolerance.
+### Testing
+- [x] 1-coder edge case.
+- [x] Burnout log timing within the 10ms tolerance.
+- [ ] fifo vs edf under contention, once the stop-propagation bug above is
+  fixed (heap arbitration itself was verified correct in isolation — always
+  picks the lowest deadline/earliest arrival when real contention happens —
+  but real contention turned out to be rare with the first parameter set
+  tried; needs cooldown large relative to compile/debug/refactor to show
+  up reliably).
+- [ ] valgrind for leaks, helgrind/tsan for data races if available.
 
-### 10. README.md
+### README.md
 Required sections (see subject ch. VII): italic first line with 42 logins,
 Description, Instructions, Resources (incl. how AI was used and for what),
 plus project-specific required sections: **Blocking cases handled** (deadlock
