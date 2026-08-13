@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:33:52 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/12 19:09:42 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/13 16:33:59 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,6 +156,8 @@ int						acquire_pair(t_coder *coder, t_simulation_state *sim,
 
 void					coder_work_cycle(t_coder *coder,
 							t_simulation_state *sim);
+
+void					free_sim(t_simulation_state *sim, uint64_t n);
 
 int						array_slot_init(t_simulation_state *sim, uint64_t i);
 

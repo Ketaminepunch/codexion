@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/06 18:37:40 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/11 00:09:16 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/13 17:07:29 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ int	main(int ac, char **av)
 	t_args				args;
 	t_simulation_state	sim;
 	t_thread_arg		*thread_args;
+	int					res;
 
 	if (ac != 9)
 	{
@@ -60,11 +61,14 @@ int	main(int ac, char **av)
 			return (1);
 		thread_args = malloc(sizeof(t_thread_arg) * args.num_coders);
 		if (!thread_args)
-			return (1);
-		if (create_and_join(&sim, thread_args))
-			return (1);
+			return (free_sim(&sim, sim.args.num_coders), 1);
+		res = create_and_join(&sim, thread_args);
 	}
 	else
+		return (1);
+	free_sim(&sim, sim.args.num_coders);
+	free(thread_args);
+	if (res)
 		return (1);
 	return (0);
 }

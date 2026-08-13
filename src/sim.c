@@ -6,7 +6,7 @@
 /*   By: vsack <vsack@student.42vienna.com>        #+#  +:+       +#+         */
 /*                                               +#+#+#+#+#+   +#+            */
 /*   Created: 2026/08/10 22:30:00 by vsack            #+#    #+#              */
-/*   Updated: 2026/08/11 00:16:58 by vsack           ###   ########.fr        */
+/*   Updated: 2026/08/13 16:38:01 by vsack           ###   ########.fr        */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,11 +45,11 @@ int	sim_init(t_simulation_state *sim, t_args args)
 	sim->dongle_arr = malloc(sizeof(t_dongle) * args.num_coders);
 	sim->coder_arr = malloc(sizeof(t_coder) * args.num_coders);
 	if (!sim->dongle_arr || !sim->coder_arr)
-		return (1);
+		return (free_sim(sim, 0), 1);
 	while (i < args.num_coders)
 	{
 		if (array_slot_init(sim, i))
-			return (1);
+			return (free_sim(sim, i), 1);
 		i++;
 	}
 	return (0);
@@ -66,4 +66,18 @@ int	create_and_join(t_simulation_state *sim, t_thread_arg *thread_args)
 	if (join_coders(sim))
 		return (1);
 	return (0);
+}
+
+void	free_sim(t_simulation_state *sim, uint64_t n)
+{
+	uint64_t	i;
+
+	i = 0;
+	while (i < n)
+	{
+		free(sim->dongle_arr[i].heap.items);
+		i++;
+	}
+	free(sim->dongle_arr);
+	free(sim->coder_arr);
 }
