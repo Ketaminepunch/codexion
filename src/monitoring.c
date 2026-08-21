@@ -74,14 +74,18 @@ void	*monitor_thread(void *arg)
 {
 	t_simulation_state	*sim;
 	uint64_t			id;
+	uint64_t			timestamp;
 
 	sim = (t_simulation_state *)arg;
 	while (1)
 	{
 		if (check_burnout(sim, &id))
 		{
-			log_action(sim, id, "burned out");
 			broadcast_stop(sim);
+			pthread_mutex_lock(&sim->out_lock);
+			timestamp = get_time_ms() - sim->start_time;
+			printf("%" PRIu64 " %" PRIu64 " %s\n", timestamp, id, "burned out");
+			pthread_mutex_unlock(&sim->out_lock);
 			return (NULL);
 		}
 		else if (check_success(sim))

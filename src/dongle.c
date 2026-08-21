@@ -25,8 +25,8 @@ void	dongle_release(t_dongle *dongle, t_args args)
 	pthread_mutex_lock(&dongle->lock);
 	dongle->state = COOLING;
 	dongle->ready_at_ms = get_time_ms() + args.dongle_cooldown;
-	pthread_mutex_unlock(&dongle->lock);
 	pthread_cond_broadcast(&dongle->condition);
+	pthread_mutex_unlock(&dongle->lock);
 }
 
 void	dongle_wait_turn(t_dongle *dongle)

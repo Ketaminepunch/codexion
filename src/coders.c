@@ -15,8 +15,17 @@
 void	log_action(t_simulation_state *sim, uint64_t id, char *msg)
 {
 	uint64_t	timestamp;
+	uint64_t	local;
 
-	pthread_mutex_lock(&sim->out_lock);
+	pthread_mutex_lock(&sim->stop_lock);
+	local = sim->stop_flag;
+	if (local)
+	{
+		pthread_mutex_unlock(&sim->stop_lock);
+		return ;
+	}
+	pthread_mutex_unlock(&sim->stop_lock);
+	(pthread_mutex_lock(&sim->out_lock));
 	timestamp = get_time_ms() - sim->start_time;
 	printf("%" PRIu64 " %" PRIu64 " %s\n", timestamp, id, msg);
 	pthread_mutex_unlock(&sim->out_lock);
